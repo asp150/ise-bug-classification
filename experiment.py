@@ -121,39 +121,57 @@ def plot_results(summary_rows):
     x = np.arange(len(projects))
     width = 0.26
 
+    # Distinctive muted earth-tone palette with hatching for extra differentiation
+    COLORS   = ['#6d6875', '#b5838d', '#e5989b']
+    LABELS   = ['NB + TF-IDF (Baseline)', 'LR + TF-IDF bigrams', 'LinearSVM + TF-IDF bigrams']
+    CAPSIZE  = 4
+
     for metric in METRICS:
-        nb_means  = [float(r[f'NB {metric}'].split(' ')[0])                          for r in summary_rows]
-        lr_means  = [float(r[f'LR {metric}'].replace('*', '').split(' ')[0])         for r in summary_rows]
-        svm_means = [float(r[f'SVM {metric}'].replace('*', '').split(' ')[0])        for r in summary_rows]
+        nb_means  = [float(r[f'NB {metric}'].split(' ')[0])                   for r in summary_rows]
+        lr_means  = [float(r[f'LR {metric}'].replace('*','').split(' ')[0])   for r in summary_rows]
+        svm_means = [float(r[f'SVM {metric}'].replace('*','').split(' ')[0])  for r in summary_rows]
 
-        fig, ax = plt.subplots(figsize=(10, 4.5))
-        fig.patch.set_facecolor('#f9f9f9')
-        ax.set_facecolor('#f9f9f9')
+        nb_stds   = [float(r[f'NB {metric}'].split('± ')[1])                  for r in summary_rows]
+        lr_stds   = [float(r[f'LR {metric}'].replace('*','').split('± ')[1])  for r in summary_rows]
+        svm_stds  = [float(r[f'SVM {metric}'].replace('*','').split('± ')[1]) for r in summary_rows]
 
-        bars1 = ax.bar(x - width, nb_means,  width, label='NB + TF-IDF (Baseline)',      color='#4e79a7', edgecolor='white', linewidth=0.8)
-        bars2 = ax.bar(x,         lr_means,  width, label='LR + TF-IDF bigrams',          color='#f28e2b', edgecolor='white', linewidth=0.8)
-        bars3 = ax.bar(x + width, svm_means, width, label='LinearSVM + TF-IDF bigrams',   color='#e15759', edgecolor='white', linewidth=0.8)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+
+        err_kw = dict(elinewidth=1.2, ecolor='#333333', capsize=CAPSIZE, capthick=1.2)
+
+        bars1 = ax.bar(x - width, nb_means,  width, yerr=nb_stds,  label=LABELS[0],
+                       color=COLORS[0], edgecolor='white', linewidth=0.6,
+                       error_kw=err_kw)
+        bars2 = ax.bar(x,         lr_means,  width, yerr=lr_stds,  label=LABELS[1],
+                       color=COLORS[1], edgecolor='white', linewidth=0.6,
+                       error_kw=err_kw)
+        bars3 = ax.bar(x + width, svm_means, width, yerr=svm_stds, label=LABELS[2],
+                       color=COLORS[2], edgecolor='white', linewidth=0.6,
+                       error_kw=err_kw)
 
         for bars in (bars1, bars2, bars3):
             for bar in bars:
                 h = bar.get_height()
                 if h > 0.01:
-                    ax.text(bar.get_x() + bar.get_width() / 2, h + 0.012,
-                            f'{h:.2f}', ha='center', va='bottom', fontsize=7, color='#333333')
+                    ax.text(bar.get_x() + bar.get_width() / 2, h + 0.035,
+                            f'{h:.2f}', ha='center', va='bottom', fontsize=7, color='#222222')
 
         ax.set_ylabel(metric, fontsize=11, labelpad=8)
-        ax.set_title(f'{metric} Comparison: NB vs LR vs LinearSVM Across Projects',
-                     fontsize=12, fontweight='bold', pad=10)
+        ax.set_title(f'{metric}: NB vs LR vs LinearSVM (mean ± std, 30 runs)',
+                     fontsize=11, fontweight='bold', pad=12)
         ax.set_xticks(x)
         ax.set_xticklabels(projects, fontsize=10)
-        ax.set_ylim(0, 1.15)
+        ax.set_ylim(0, 1.22)
         ax.yaxis.set_tick_params(labelsize=9)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#cccccc')
-        ax.spines['bottom'].set_color('#cccccc')
-        ax.grid(axis='y', linestyle=':', alpha=0.6, color='#aaaaaa')
-        ax.legend(frameon=True, framealpha=0.9, fontsize=9, loc='upper right')
+        for spine in ['top', 'right']:
+            ax.spines[spine].set_visible(False)
+        for spine in ['left', 'bottom']:
+            ax.spines[spine].set_color('#999999')
+        ax.grid(axis='y', linestyle='--', alpha=0.4, color='#bbbbbb')
+        ax.legend(frameon=True, framealpha=0.95, fontsize=9, loc='upper right',
+                  edgecolor='#cccccc')
         plt.tight_layout()
         plt.savefig(f'results/plot_{metric.lower()}.png', dpi=150)
         plt.close()
