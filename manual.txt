@@ -1,0 +1,51 @@
+User Manual
+===========
+Bug Report Classification Tool — ISE Coursework
+
+Overview
+--------
+This tool classifies GitHub bug reports as performance-related (1) or not (0).
+It compares three approaches:
+  - Baseline:    Naive Bayes + TF-IDF (unigrams)
+  - Comparison:  Logistic Regression + TF-IDF (bigrams, class_weight='balanced')
+  - Proposed:    Linear SVM + TF-IDF (bigrams, class_weight='balanced')
+
+Repository Structure
+--------------------
+ISE/
+├── baseline.py       — Naive Bayes + TF-IDF (unigrams) implementation
+├── logistic.py       — Logistic Regression + TF-IDF (bigrams) implementation
+├── improved.py       — Linear SVM + TF-IDF (bigrams) implementation
+├── experiment.py     — Full experiment runner (30 repeats, metrics, statistical tests)
+├── data/             — Dataset CSV files (one per project)
+│   ├── tensorflow.csv
+│   ├── pytorch.csv
+│   ├── keras.csv
+│   ├── incubator-mxnet.csv
+│   └── caffe.csv
+└── results/          — Output folder (created automatically when experiment runs)
+
+How to Run
+----------
+Step 1: Clone or download the repository.
+
+Step 2: Install dependencies:
+    pip install scikit-learn pandas numpy scipy matplotlib
+
+Step 3: Navigate to the ISE folder:
+    cd path/to/ISE
+
+Step 4: Run the experiment:
+    python experiment.py
+
+Output
+------
+After running, the results/ folder will contain:
+- summary_table.csv       — Mean ± std precision, recall, F1 for all three models across
+                            all projects, with Wilcoxon p-values and A12 effect sizes
+- raw_<project>.csv       — Per-repeat scores for each project (nb, lr, svm columns)
+- plot_precision.png      — Bar chart comparing precision across all three models
+- plot_recall.png         — Bar chart comparing recall across all three models
+- plot_f1.png             — Bar chart comparing F1 score across all three models
+
+Results are also printed to the terminal as the experiment runs.

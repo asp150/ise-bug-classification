@@ -1,0 +1,59 @@
+Replication Instructions
+========================
+Bug Report Classification Tool — ISE Coursework
+
+These instructions explain how to exactly reproduce the results reported in the paper.
+
+Step 1: Clone the Repository
+-----------------------------
+Clone or download the repository from GitHub.
+
+Step 2: Install Dependencies
+-----------------------------
+    pip install scikit-learn pandas numpy scipy matplotlib
+
+Step 3: Verify the Data Files
+------------------------------
+Ensure the data/ folder contains the following 5 CSV files:
+    - tensorflow.csv
+    - pytorch.csv
+    - keras.csv
+    - incubator-mxnet.csv
+    - caffe.csv
+
+These are the original datasets from:
+https://github.com/ideas-labo/ISE/tree/main/lab1/datasets
+
+Step 4: Run the Experiment
+---------------------------
+Navigate to the ISE folder and run:
+
+    python experiment.py
+
+This will:
+- Run Naive Bayes (baseline), Logistic Regression, and Linear SVM on all 5 projects
+- Repeat each experiment 30 times with different random seeds (0–29)
+- Use a 70/30 stratified train/test split each time
+- Compute mean ± std Precision, Recall, and F1 for each model
+- Apply the Wilcoxon signed-rank test to compare each model against the baseline
+- Compute the Vargha-Delaney A12 effect size for each comparison
+- Save all results to the results/ folder
+
+Step 5: Verify Results
+-----------------------
+After running, check results/summary_table.csv.
+The F1 values should match the following (reported in Table 2 of the report):
+
+  TensorFlow: NB F1 = 0.007, LR F1 = 0.685 (p < 0.05, A12 = 1.000), SVM F1 = 0.731 (p < 0.05, A12 = 1.000)
+  PyTorch:    NB F1 = 0.000, LR F1 = 0.540 (p < 0.05, A12 = 1.000), SVM F1 = 0.502 (p < 0.05, A12 = 1.000)
+  Keras:      NB F1 = 0.008, LR F1 = 0.659 (p < 0.05, A12 = 1.000), SVM F1 = 0.645 (p < 0.05, A12 = 1.000)
+  MXNet:      NB F1 = 0.000, LR F1 = 0.566 (p < 0.05, A12 = 1.000), SVM F1 = 0.512 (p < 0.05, A12 = 1.000)
+  Caffe:      NB F1 = 0.000, LR F1 = 0.386 (p < 0.05, A12 = 1.000), SVM F1 = 0.317 (p < 0.05, A12 = 0.950)
+
+All improvements over the baseline are statistically significant (p < 0.05) with large A12
+effect sizes (≥ 0.950) across all five projects.
+
+Expected Runtime
+----------------
+Approximately 5–15 minutes on a standard CPU, depending on machine speed.
+No GPU is required.
