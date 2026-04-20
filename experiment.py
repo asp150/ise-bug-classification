@@ -127,13 +127,18 @@ def plot_results(summary_rows):
     CAPSIZE  = 4
 
     for metric in METRICS:
-        nb_means  = [float(r[f'NB {metric}'].split(' ')[0])                   for r in summary_rows]
-        lr_means  = [float(r[f'LR {metric}'].replace('*','').split(' ')[0])   for r in summary_rows]
-        svm_means = [float(r[f'SVM {metric}'].replace('*','').split(' ')[0])  for r in summary_rows]
+        nb_means  = np.array([float(r[f'NB {metric}'].split(' ')[0])                   for r in summary_rows])
+        lr_means  = np.array([float(r[f'LR {metric}'].replace('*','').split(' ')[0])   for r in summary_rows])
+        svm_means = np.array([float(r[f'SVM {metric}'].replace('*','').split(' ')[0])  for r in summary_rows])
 
-        nb_stds   = [float(r[f'NB {metric}'].split('± ')[1])                  for r in summary_rows]
-        lr_stds   = [float(r[f'LR {metric}'].replace('*','').split('± ')[1])  for r in summary_rows]
-        svm_stds  = [float(r[f'SVM {metric}'].replace('*','').split('± ')[1]) for r in summary_rows]
+        nb_stds   = np.array([float(r[f'NB {metric}'].split('± ')[1])                  for r in summary_rows])
+        lr_stds   = np.array([float(r[f'LR {metric}'].replace('*','').split('± ')[1])  for r in summary_rows])
+        svm_stds  = np.array([float(r[f'SVM {metric}'].replace('*','').split('± ')[1]) for r in summary_rows])
+
+        # Clip error bars so they never extend below zero
+        nb_err  = [np.minimum(nb_stds,  nb_means),  nb_stds]
+        lr_err  = [np.minimum(lr_stds,  lr_means),  lr_stds]
+        svm_err = [np.minimum(svm_stds, svm_means), svm_stds]
 
         fig, ax = plt.subplots(figsize=(10, 5))
         fig.patch.set_facecolor('white')
@@ -141,29 +146,35 @@ def plot_results(summary_rows):
 
         err_kw = dict(elinewidth=1.2, ecolor='#333333', capsize=CAPSIZE, capthick=1.2)
 
-        bars1 = ax.bar(x - width, nb_means,  width, yerr=nb_stds,  label=LABELS[0],
-                       color=COLORS[0], edgecolor='white', linewidth=0.6,
-                       error_kw=err_kw)
-        bars2 = ax.bar(x,         lr_means,  width, yerr=lr_stds,  label=LABELS[1],
-                       color=COLORS[1], edgecolor='white', linewidth=0.6,
-                       error_kw=err_kw)
-        bars3 = ax.bar(x + width, svm_means, width, yerr=svm_stds, label=LABELS[2],
-                       color=COLORS[2], edgecolor='white', linewidth=0.6,
-                       error_kw=err_kw)
+        bars1 = ax.bar(x - width, nb_means,  width, yerr=nb_err,  label=LABELS[0],
+                       color=COLORS[0], edgecolor='white', linewidth=0.6, error_kw=err_kw)
+        bars2 = ax.bar(x,         lr_means,  width, yerr=lr_err,  label=LABELS[1],
+                       color=COLORS[1], edgecolor='white', linewidth=0.6, error_kw=err_kw)
+        bars3 = ax.bar(x + width, svm_means, width, yerr=svm_err, label=LABELS[2],
+                       color=COLORS[2], edgecolor='white', linewidth=0.6, error_kw=err_kw)
 
-        for bars in (bars1, bars2, bars3):
-            for bar in bars:
-                h = bar.get_height()
-                if h > 0.01:
-                    ax.text(bar.get_x() + bar.get_width() / 2, h + 0.035,
-                            f'{h:.2f}', ha='center', va='bottom', fontsize=7, color='#222222')
+        # Value labels: place above error bar top, annotate near-zero NB bars
+        all_bars  = [(bars1, nb_means,  nb_stds),
+                     (bars2, lr_means,  lr_stds),
+                     (bars3, svm_means, svm_stds)]
+        for bars, means, stds in all_bars:
+            for bar, mean, std in zip(bars, means, stds):
+                top = mean + std
+                if mean > 0.01:
+                    ax.text(bar.get_x() + bar.get_width() / 2, top + 0.02,
+                            f'{mean:.2f}', ha='center', va='bottom', fontsize=7, color='#222222')
+                else:
+                    ax.text(bar.get_x() + bar.get_width() / 2, 0.025,
+                            'NB≈0', ha='center', va='bottom', fontsize=6,
+                            color='#555555', style='italic')
 
+        max_val = max(np.max(lr_means + lr_stds), np.max(svm_means + svm_stds))
+        ax.set_ylim(0, min(max_val + 0.18, 1.0))
         ax.set_ylabel(metric, fontsize=11, labelpad=8)
-        ax.set_title(f'{metric}: NB vs LR vs LinearSVM (mean ± std, 30 runs)',
-                     fontsize=11, fontweight='bold', pad=12)
+        ax.set_title(f'{metric}: NB vs LR vs LinearSVM (mean ± std, 30 runs; error bars clipped at 0)',
+                     fontsize=10, fontweight='bold', pad=12)
         ax.set_xticks(x)
         ax.set_xticklabels(projects, fontsize=10)
-        ax.set_ylim(0, 1.22)
         ax.yaxis.set_tick_params(labelsize=9)
         for spine in ['top', 'right']:
             ax.spines[spine].set_visible(False)
